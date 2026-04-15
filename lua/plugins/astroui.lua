@@ -17,6 +17,11 @@ return {
     highlights = {
       init = { -- this table overrides highlights in all themes
         -- Normal = { bg = "#000000" },
+        Comment = { 
+          fg = "#888888",      -- 将颜色改浅（原版非常暗，#888888 会明显很多）
+          italic = true,       -- 设为斜体（更有辨识度）
+          bold = true,        -- 如果还看不清，可以改为 true
+        },
       },
       astrodark = { -- a table of overrides/changes when applying the astrotheme theme
         -- Normal = { bg = "#000000" },
