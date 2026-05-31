@@ -1,4 +1,4 @@
-if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
+-- if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
 
 -- AstroCore provides a central place to modify mappings, vim options, autocommands, and more!
 -- Configuration documentation can be found with `:h astrocore`
@@ -57,6 +57,11 @@ return {
     mappings = {
       -- first key is the mode
       n = {
+        -- Translate
+        ["<Leader>tt"] = { desc = "󰗊 Translation" }, -- 定义一个翻译前缀菜单
+        ["<Leader>ttw"] = { "<cmd>TranslateW<cr>", desc = "翻译单词 (窗口)" },
+        ["<Leader>ttr"] = { "<cmd>TranslateR<cr>", desc = "替换为翻译结果" },
+
         -- second key is the lefthand side of the map
 
         -- navigate buffer tabs
@@ -79,6 +84,9 @@ return {
 
         -- setting a mapping to false will disable it
         -- ["<C-S>"] = false,
+      },
+      v = {
+        ["<Leader>tt"] = { "<cmd>TranslateV<cr>", desc = "翻译选中内容" },
       },
     },
   },
