@@ -16,15 +16,27 @@ return {
     -- AstroUI allows you to easily modify highlight groups easily for any and all colorschemes
     highlights = {
       init = { -- this table overrides highlights in all themes
-        -- Normal = { bg = "#000000" },
+        Normal = { bg = "NONE" },
+        NormalNC = { bg = "NONE" },
+        NormalFloat = { bg = "NONE" },
+        SignColumn = { bg = "NONE" },
+        EndOfBuffer = { bg = "NONE" },
+        VertSplit = { bg = "NONE" },
+        WinSeparator = { bg = "NONE" },
+        LineNr = { bg = "NONE" },
+        CursorLineNr = { bg = "NONE" },
+        FoldColumn = { bg = "NONE" },
+        Folded = { bg = "NONE" },
+        NonText = { bg = "NONE" },
+        SpecialKey = { bg = "NONE" },
         Comment = { 
-          fg = "#888888",      -- 将颜色改浅（原版非常暗，#888888 会明显很多）
-          italic = true,       -- 设为斜体（更有辨识度）
-          bold = true,        -- 如果还看不清，可以改为 true
+          fg = "#888888",
+          italic = true,
+          bold = true,
         },
       },
       astrodark = { -- a table of overrides/changes when applying the astrotheme theme
-        -- Normal = { bg = "#000000" },
+        Normal = { bg = "NONE" },
       },
     },
     -- Icons can be configured throughout the interface
