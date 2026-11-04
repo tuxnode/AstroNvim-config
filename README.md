@@ -29,6 +29,28 @@ bash install.sh
 
 > 如果仓库是私有的，`raw.githubusercontent.com` 无法直接访问，请使用克隆后运行的方式。
 
+### GitHub 访问较慢时使用镜像
+
+脚本内置了 GitHub 镜像支持，默认镜像为 `https://gh-proxy.com`：
+
+```bash
+bash install.sh --mirror
+```
+
+也可以同时用镜像下载安装脚本本身：
+
+```bash
+bash <(curl -fsSL https://gh-proxy.com/https://raw.githubusercontent.com/tuxnode/AstroNvim-config/main/install.sh) --mirror
+```
+
+使用自定义镜像：
+
+```bash
+bash install.sh --mirror https://your-mirror.example
+```
+
+镜像会用于配置仓库、Neovim 和字体等 GitHub Release 下载，以及 Lazy.nvim 插件克隆。已设置镜像时可用 `--no-mirror` 临时禁用。
+
 ## 常用参数
 
 ```bash
@@ -43,11 +65,15 @@ bash install.sh --help
 | `--no-deps` | 跳过依赖和 Neovim 的自动安装 |
 | `--no-backup` | 不备份已有 Neovim 目录 |
 | `--with-font` | 额外安装 JetBrainsMono Nerd Font |
+| `--mirror [地址]` | 使用 GitHub 镜像，不填地址时使用默认镜像 |
+| `--no-mirror` | 禁用 GitHub 镜像 |
 
-例如无人值守安装并安装字体：
+也可以通过环境变量 `GITHUB_MIRROR=https://your-mirror.example` 指定镜像。
+
+例如无人值守安装、使用镜像并安装字体：
 
 ```bash
-bash install.sh --yes --with-font
+bash install.sh --yes --mirror --with-font
 ```
 
 ## 更新配置
