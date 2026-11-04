@@ -1,34 +1,84 @@
-# AstroNvim Template
+# AstroNvim 个人配置
 
-**NOTE:** This is for AstroNvim v6+
+基于 [AstroNvim](https://github.com/AstroNvim/AstroNvim) v6 的个人配置，附带一键安装脚本，方便在新设备上快速部署。
 
-A template for getting started with [AstroNvim](https://github.com/AstroNvim/AstroNvim)
+## 一键安装
 
-## 🛠️ Installation
+Linux / macOS：
 
-#### Make a backup of your current nvim and shared folder
-
-```shell
-mv ~/.config/nvim ~/.config/nvim.bak
-mv ~/.local/share/nvim ~/.local/share/nvim.bak
-mv ~/.local/state/nvim ~/.local/state/nvim.bak
-mv ~/.cache/nvim ~/.cache/nvim.bak
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/tuxnode/AstroNvim-config/main/install.sh)
 ```
 
-#### Create a new user repository from this template
+也可以先克隆仓库再运行：
 
-Press the "Use this template" button above to create a new repository to store your user configuration.
-
-You can also just clone this repository directly if you do not want to track your user configuration in GitHub.
-
-#### Clone the repository
-
-```shell
-git clone https://github.com/<your_user>/<your_repository> ~/.config/nvim
+```bash
+git clone https://github.com/tuxnode/AstroNvim-config.git
+cd AstroNvim-config
+bash install.sh
 ```
 
-#### Start Neovim
+安装脚本会自动完成：
 
-```shell
+- 识别 Linux / macOS 及对应的包管理器
+- 安装缺失的 `git`、`curl`、`ripgrep`、`fd`、C 编译器等依赖
+- 检测 Neovim，低于 0.11 时自动下载官方版本到 `~/.local` 并配置 PATH
+- 备份已有的 `~/.config/nvim`、`~/.local/share/nvim`、`~/.local/state/nvim`、`~/.cache/nvim`
+- 安装本仓库配置
+- 通过 `Lazy.nvim` 同步插件，并通过 `Mason` 安装配置中声明的工具
+
+> 如果仓库是私有的，`raw.githubusercontent.com` 无法直接访问，请使用克隆后运行的方式。
+
+## 常用参数
+
+```bash
+bash install.sh --help
+```
+
+| 参数 | 说明 |
+| --- | --- |
+| `-y, --yes` | 不询问，直接安装 |
+| `--branch <名称>` | 指定分支，默认 `main` |
+| `--repo <地址>` | 指定仓库地址 |
+| `--no-deps` | 跳过依赖和 Neovim 的自动安装 |
+| `--no-backup` | 不备份已有 Neovim 目录 |
+| `--with-font` | 额外安装 JetBrainsMono Nerd Font |
+
+例如无人值守安装并安装字体：
+
+```bash
+bash install.sh --yes --with-font
+```
+
+## 更新配置
+
+```bash
+cd ~/.config/nvim
+git pull
+nvim --headless "+Lazy! sync" +qa
+```
+
+然后在 Neovim 中按需执行 `:MasonToolsInstall` 和 `:TSUpdate`。
+
+## 手动安装（不使用脚本）
+
+```bash
+mv ~/.config/nvim ~/.config/nvim.bak.$(date +%Y%m%d-%H%M%S)
+mv ~/.local/share/nvim ~/.local/share/nvim.bak.$(date +%Y%m%d-%H%M%S)
+mv ~/.local/state/nvim ~/.local/state/nvim.bak.$(date +%Y%m%d-%H%M%S)
+mv ~/.cache/nvim ~/.cache/nvim.bak.$(date +%Y%m%d-%H%M%S)
+
+git clone https://github.com/tuxnode/AstroNvim-config.git ~/.config/nvim
 nvim
 ```
+
+## 恢复备份
+
+安装脚本会生成 `*.bak.<时间戳>` 形式的备份，例如：
+
+```bash
+mv ~/.config/nvim ~/.config/nvim.new
+mv ~/.config/nvim.bak.20261104-200938 ~/.config/nvim
+```
+
+对 `~/.local/share/nvim`、`~/.local/state/nvim`、`~/.cache/nvim` 同理。
