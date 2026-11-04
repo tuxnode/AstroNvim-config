@@ -3,6 +3,8 @@ set -Eeuo pipefail
 
 REPO_URL="${ASTRONVIM_CONFIG_REPO:-https://github.com/tuxnode/AstroNvim-config.git}"
 BRANCH="${ASTRONVIM_CONFIG_BRANCH:-main}"
+DEFAULT_GITHUB_MIRROR="https://gh-proxy.com"
+GITHUB_MIRROR="${GITHUB_MIRROR:-}"
 
 ASSUME_YES=0
 INSTALL_DEPS=1
@@ -56,11 +58,15 @@ AstroNvim 配置一键安装脚本
   --no-deps          跳过依赖和 Neovim 的自动安装
   --no-backup        不备份已有的 nvim 目录
   --with-font        额外安装 JetBrainsMono Nerd Font
+  --mirror [地址]    使用 GitHub 镜像加速下载和插件克隆
+                     不带地址时使用默认镜像 https://gh-proxy.com
+  --no-mirror        禁用 GitHub 镜像
   -h, --help         显示帮助
 
 也可以通过环境变量指定:
   ASTRONVIM_CONFIG_REPO    仓库地址
   ASTRONVIM_CONFIG_BRANCH  分支名称
+  GITHUB_MIRROR            GitHub 镜像地址
 EOF
 }
 
@@ -82,6 +88,16 @@ while (($#)); do
     --no-deps) INSTALL_DEPS=0 ;;
     --no-backup) DO_BACKUP=0 ;;
     --with-font) INSTALL_FONT=1 ;;
+    --mirror)
+      if [[ $# -ge 2 && "$2" != -* ]]; then
+        GITHUB_MIRROR="$2"
+        shift
+      else
+        GITHUB_MIRROR="$DEFAULT_GITHUB_MIRROR"
+      fi
+      ;;
+    --mirror=*) GITHUB_MIRROR="${1#*=}" ;;
+    --no-mirror) GITHUB_MIRROR="" ;;
     -h|--help)
       usage
       exit 0
@@ -90,6 +106,36 @@ while (($#)); do
   esac
   shift
 done
+
+if [[ -n "$GITHUB_MIRROR" ]]; then
+  GITHUB_MIRROR="${GITHUB_MIRROR%/}"
+  case "$GITHUB_MIRROR" in
+    http://*|https://*|file://*) ;;
+    *) die "镜像地址必须以 http://、https:// 或 file:// 开头: $GITHUB_MIRROR" ;;
+  esac
+fi
+
+github_url() {
+  local url="$1"
+  if [[ -z "$GITHUB_MIRROR" ]]; then
+    printf '%s\n' "$url"
+  elif [[ "$url" == https://github.com/* || "$url" == https://raw.githubusercontent.com/* ]]; then
+    printf '%s/%s\n' "$GITHUB_MIRROR" "$url"
+  else
+    printf '%s\n' "$url"
+  fi
+}
+
+configure_git_mirror() {
+  [[ -n "$GITHUB_MIRROR" ]] || return 0
+  local count="${GIT_CONFIG_COUNT:-0}"
+  if ! [[ "$count" =~ ^[0-9]+$ ]]; then
+    count=0
+  fi
+  export "GIT_CONFIG_KEY_${count}=url.${GITHUB_MIRROR}/https://github.com/.insteadOf"
+  export "GIT_CONFIG_VALUE_${count}=https://github.com/"
+  export GIT_CONFIG_COUNT=$((count + 1))
+}
 
 confirm() {
   local prompt="$1" reply
@@ -316,7 +362,7 @@ install_nvim() {
   esac
 
   asset="nvim-linux-${arch}.tar.gz"
-  url="https://github.com/neovim/neovim/releases/latest/download/${asset}"
+  url="$(github_url "https://github.com/neovim/neovim/releases/latest/download/${asset}")"
   tmp="$(new_tmpdir)"
 
   info "下载 Neovim: $url"
@@ -386,8 +432,10 @@ install_config() {
       cp -a "$SCRIPT_DIR/." "$NVIM_CONFIG/"
     fi
   else
-    info "克隆配置仓库: $REPO_URL ($BRANCH)"
-    git clone --branch "$BRANCH" "$REPO_URL" "$NVIM_CONFIG"
+    local clone_url
+    clone_url="$(github_url "$REPO_URL")"
+    info "克隆配置仓库: $clone_url ($BRANCH)"
+    git clone --branch "$BRANCH" "$clone_url" "$NVIM_CONFIG"
   fi
 }
 
@@ -419,7 +467,7 @@ install_font() {
   info "安装 JetBrainsMono Nerd Font..."
   local tmp url dir
   tmp="$(new_tmpdir)"
-  url="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip"
+  url="$(github_url "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip")"
   curl -fL --retry 3 --retry-delay 2 "$url" -o "$tmp/font.zip"
 
   if [[ "$OS" == "Darwin" ]]; then
@@ -440,10 +488,15 @@ main() {
   printf '  仓库:     %s\n' "$REPO_URL"
   printf '  分支:     %s\n' "$BRANCH"
   printf '  配置目录: %s\n' "$NVIM_CONFIG"
+  if [[ -n "$GITHUB_MIRROR" ]]; then
+    printf '  镜像:     %s\n' "$GITHUB_MIRROR"
+  fi
 
   if ((IN_PLACE)); then
     printf '  模式:     原地更新（不会替换配置目录）\n'
   fi
+
+  configure_git_mirror
 
   if pgrep -x nvim >/dev/null 2>&1; then
     warn "检测到 Neovim 正在运行，建议先退出以避免文件冲突"
