@@ -1,5 +1,5 @@
 if vim.g.neovide then
-  vim.o.guifont = "JetBrainsMono Nerd Font:h23"
+  vim.o.guifont = "JetBrainsMono Nerd Font:h17"
   -- vim.o.guifont = "*:h22"
 
   -- Neovide 特有的丝滑配置（可选优化）
