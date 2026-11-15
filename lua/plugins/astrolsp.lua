@@ -24,6 +24,7 @@ return {
         allow_filetypes = { -- enable format on save for specified filetypes only
           "go",
           "cpp",
+          "rust",
         },
         ignore_filetypes = { -- disable format on save for specified filetypes
           -- "python",
@@ -34,7 +35,7 @@ return {
         -- "lua_ls",
         "clangd",
       },
-      timeout_ms = 1000, -- default format timeout
+      timeout_ms = 3000, -- default format timeout
       -- filter = function(client) -- fully override the default formatting function
       --   return true
       -- end

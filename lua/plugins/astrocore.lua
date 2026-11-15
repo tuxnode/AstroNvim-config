@@ -5,6 +5,71 @@
 -- NOTE: We highly recommend setting up the Lua Language Server (`:LspInstall lua_ls`)
 --       as this provides autocomplete and documentation while editing
 
+-- Organize Rust imports on save with rust-analyzer's `Merge imports` code action,
+-- then let AstroLSP format the buffer with rustfmt. This is registered as a global
+-- autocommand, which runs before the buffer-local autoformat autocommand that
+-- AstroLSP creates when rust_analyzer attaches.
+--
+-- NOTE: as of rust-analyzer 1.99.1 `source.organizeImports` is no longer exposed,
+-- and `Merge imports` does not remove unused imports.
+---@param bufnr integer buffer to organize imports for
+local function rust_merge_imports(bufnr)
+  if vim.bo[bufnr].filetype ~= "rust" then return end
+
+  -- respect the AstroLSP autoformat toggles (`<Leader>uf` buffer / `<Leader>uF` global)
+  local astrolsp = require "astrolsp"
+  local autoformat = vim.b[bufnr].autoformat
+  if autoformat == nil then autoformat = astrolsp.autoformat_enabled(bufnr) end
+  if not autoformat then return end
+
+  local client
+  for _, c in ipairs(vim.lsp.get_clients { bufnr = bufnr }) do
+    -- rustaceanvim names the client `rust-analyzer`, while AstroLSP/nvim-lspconfig uses `rust_analyzer`
+    if c.name == "rust-analyzer" or c.name == "rust_analyzer" then
+      client = c
+      break
+    end
+  end
+  if not client or not client:supports_method("textDocument/codeAction", bufnr) then return end
+
+  local timeout = astrolsp.format_opts.timeout_ms or 3000
+  local last_line = vim.api.nvim_buf_line_count(bufnr) - 1
+  local last_col = #(vim.api.nvim_buf_get_lines(bufnr, last_line, last_line + 1, false)[1] or "")
+  local response = client:request_sync("textDocument/codeAction", {
+    textDocument = vim.lsp.util.make_text_document_params(bufnr),
+    range = { start = { line = 0, character = 0 }, ["end"] = { line = last_line, character = last_col } },
+    context = { diagnostics = {}, only = { "refactor.rewrite" } },
+  }, timeout, bufnr)
+  if not response or response.err or type(response.result) ~= "table" then return end
+
+  for _, action in ipairs(response.result) do
+    if action.title == "Merge imports" then
+      -- actions are lazily resolved when the server advertises `codeAction/resolve`
+      if not action.edit and action.data then
+        local resolved = client:request_sync("codeAction/resolve", action, timeout, bufnr)
+        if resolved and not resolved.err and resolved.result then action = resolved.result end
+      end
+      if action.edit then
+        local edit = action.edit
+        -- `Merge imports` only edits the current file. Drop rust-analyzer's
+        -- "edit outside of the workspace" confirmation so that saving never blocks on it.
+        if edit.changeAnnotations then
+          edit.changeAnnotations = nil
+          for _, change in ipairs(edit.documentChanges or {}) do
+            for _, text_edit in ipairs(change.edits or {}) do
+              if text_edit.annotationId then text_edit.annotationId = nil end
+            end
+          end
+        end
+        vim.lsp.util.apply_workspace_edit(edit, client.offset_encoding or "utf-16")
+      elseif action.command then
+        client:exec_cmd(action, { bufnr = bufnr })
+      end
+      break
+    end
+  end
+end
+
 ---@type LazySpec
 return {
   "AstroNvim/astrocore",
@@ -23,6 +88,17 @@ return {
     diagnostics = {
       virtual_text = true,
       underline = true,
+    },
+    -- Autocommands registered globally through AstroCore
+    autocmds = {
+      rust_merge_imports = {
+        {
+          event = "BufWritePre",
+          pattern = "*.rs",
+          desc = "Merge Rust imports on save",
+          callback = function(args) rust_merge_imports(args.buf) end,
+        },
+      },
     },
     -- passed to `vim.filetype.add`
     filetypes = {
