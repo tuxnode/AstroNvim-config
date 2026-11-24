@@ -17,9 +17,9 @@ return {
         },
       }
 
-      -- other variants: github_dark_default, github_dark_dimmed,
-      -- github_dark_high_contrast, github_light, github_light_default, ...
-      vim.cmd.colorscheme "github_dark"
+      -- The active variant is controlled by the `colorscheme` option in
+      -- `lua/plugins/astroui.lua` (e.g. github_dark, github_dark_default,
+      -- github_dark_dimmed, github_dark_high_contrast, github_light, ...).
     end,
   },
 }

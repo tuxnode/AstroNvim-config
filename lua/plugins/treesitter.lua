@@ -17,6 +17,9 @@ return {
         "vim",
         "rust",
         "toml",
+        "c",
+        "cpp",
+        "cmake",
         -- add more arguments for adding more treesitter parsers
       },
     },
