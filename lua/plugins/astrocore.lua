@@ -91,6 +91,15 @@ return {
     },
     -- Autocommands registered globally through AstroCore
     autocmds = {
+      autoread_checktime = {
+        {
+          event = { "BufEnter", "CursorHold", "CursorHoldI", "FocusGained", "VimResume" },
+          desc = "Reload files changed outside of Neovim",
+          callback = function(args)
+            if vim.bo[args.buf].buftype == "" and vim.bo[args.buf].modifiable then vim.cmd "checktime" end
+          end,
+        },
+      },
       rust_merge_imports = {
         {
           event = "BufWritePre",
@@ -116,6 +125,7 @@ return {
     -- vim options can be configured here
     options = {
       opt = { -- vim.opt.<key>
+        autoread = true, -- reload files changed outside of Neovim
         relativenumber = true, -- sets vim.opt.relativenumber
         number = true, -- sets vim.opt.number
         spell = false, -- sets vim.opt.spell
